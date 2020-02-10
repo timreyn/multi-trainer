@@ -1,14 +1,17 @@
-var express = require('express')
-var bodyParser = require('body-parser')
+const auth = require('./auth')
+
+const bodyParser = require('body-parser')
+const cookieParser = require('cookie-parser')
+const dotenv = require('dotenv')
+const express = require('express')
+dotenv.config()
 
 var app = express()
 
 app.use(bodyParser.json())
+app.use(cookieParser(process.env.COOKIE_SECRET))
+app.use('/auth', auth)
 
-app.get('/', function(req, res) {
-  res.send('Hello World!');
-})
-
-app.listen(3000, function() {
-  console.log('Server running at http://localhost:3000');
+app.listen(process.env.PORT, function() {
+  console.log('Server running at http://localhost:%d', process.env.PORT);
 })
