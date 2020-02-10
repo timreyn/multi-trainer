@@ -1,6 +1,8 @@
+const assert = require('assert')
 const express = require('express')
 const dotenv = require('dotenv')
 const { Issuer } = require('openid-client')
+const dbRun = require('./db')
 
 dotenv.config()
 
@@ -39,14 +41,51 @@ router.get('/oauth_response', function(req, res) {
     .then(function (tokenSet) {
       client.userinfo(tokenSet).then(function (userinfo) {
         var url = req.cookies.redirectUrl
-        if (url) {
-          res.clearCookie('redirectUrl')
-          res.redirect(url)
-        } else {
-          res.redirect(process.env.NG_FRONTEND)
-        }
+        dbRun(function(db, callback) {
+          const collection = db.collection('users')
+          collection.updateOne(
+            {id: userinfo.me.id},
+            {$set: userinfo.me},
+            {upsert: true},
+            function(err, result) {
+              res.cookie('userId', userinfo.me.id, { httpOnly: true, signed: true, maxAge: 24 * 60 * 60 * 1000})
+              assert.equal(err, null)
+              callback()
+              if (url) {
+                res.clearCookie('redirectUrl')
+                res.redirect(url)
+              } else {
+                res.redirect(process.env.NG_FRONTEND)
+              }
+            })
+        })
       })
     })
+})
+
+router.get('/logout', function(req, res) {
+  res.clearCookie('userId')
+  res.redirect(req.get('Referer'))
+})
+
+router.get('/user', function(req, res) {
+  userId = parseInt(req.signedCookies.userId)
+  if (!userId) {
+    res.status(401).end()
+    return
+  }
+  dbRun(function(db, callback) {
+    const collection = db.collection('users')
+    collection.find({id: userId}).toArray(function(err, docs) {
+      assert.equal(err, null)
+      callback()
+      if (!docs || !docs[0]) {
+        res.status(400).end()
+        return
+      }
+      res.json(docs[0])
+    })
+  })
 })
 
 module.exports = router
