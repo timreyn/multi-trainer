@@ -48,7 +48,7 @@ router.get('/oauth_response', function(req, res) {
             {$set: userinfo.me},
             {upsert: true},
             function(err, result) {
-              res.cookie('userId', userinfo.me.id, { httpOnly: true, signed: true, maxAge: 24 * 60 * 60 * 1000})
+              res.cookie('userId', userinfo.me.id, { signed: true, maxAge: 24 * 60 * 60 * 1000})
               assert.equal(err, null)
               callback()
               if (url) {
