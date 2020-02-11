@@ -4,7 +4,13 @@
     Multi Trainer
   </span>
   <span class="spacer"></span>
-  <span>
-    <a href="http://localhost:3030/auth/login">Log in</a>
+  <span *ngIf="loginState | async as state">
+    <div *ngIf="state.loggedIn; else loggedOut">
+      Welcome, {{ state.user.name }}!
+      <a href="http://localhost:3030/auth/logout">Log out</a>
+    </div>
+    <ng-template #loggedOut>
+      <a href="http://localhost:3030/auth/login">Log in</a>
+    </ng-template>
   </span>
 </mat-toolbar>
